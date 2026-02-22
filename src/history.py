@@ -1,3 +1,5 @@
+from gpColor import colorize
+
 from src.figure import Figure
 from src.helper import Colors, Position
 from src.player import Player
@@ -49,4 +51,4 @@ class MoveHistory:
         self.move_type = move_type # move, eat, shah, mat
 
     def __str__(self):
-        return f"[{self.player.name} ({self.player.id})] {self.figure} ({self.from_pos.position} -> {self.to_pos.position}) | {self.move_type}"
+        return f"[{self.player.name} ({self.player.id})] {colorize(self.figure.name, font = self.figure.color)} ({self.from_pos.position} -> {self.to_pos.position}) | {self.move_type}"

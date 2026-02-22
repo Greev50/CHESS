@@ -22,8 +22,7 @@ class Cell():
         return self.figure
     
     def set_figure(self, figure: Figure):
-        if not isinstance(self.figure, NoneFigure):
-            self.figure = figure
+        self.figure = figure
     
     def remove_figure(self):
         self.figure = None

@@ -1,7 +1,7 @@
 from typing import List
 
 from src.history import History
-from src.figure import Pawn
+from src.figure import *
 from src.cells import *
 from src.helper import Colors
 
@@ -92,84 +92,29 @@ class Table:
                 for cell in line:
                     print(cell, end="")
                 print()
+        if self.type == TableTypes.HEXAGONAL:
+            # НЕЙРОНКА НАПИШИ КРУТО ИНАЧЕ ПОРВУ ТЕБЕ ОЧКО!!!
+            pass
     
-    def move_figure(self, position1: Position, position2: Position) -> str:
+    def move_figure(self, position1: Position, position2: Position):
+        cell1: Cell = self.table[position1.x][position1.y]
+        cell2: Cell = self.table[position2.x][position2.y]
 
-        if self.type == TableTypes.BASIC:
-            if all(0 <= x <= 7 for x in (position1.x, position1.y, position2.x, position2.y)) == False:
-                raise ValueError("Такой клетки не существует!")
-                # return False
+        check = cell1.get_figure().check_move(position1, position2, self.table)
 
-        if self.table[position1.x][position1.y].has_figure() == False:
-            # raise ValueError("Пустая клетка!")
-            return False
-        else:
-            figure: Figure = self.table[position1.x][position1.y].get_figure()
-        
-        origin: Cell | NoneCell = self.table[position1.x][position1.y]
-        destination: Cell | NoneCell = self.table[position2.x][position2.y]
-        
-        if isinstance(destination, NoneCell):
-            raise ValueError("Такой клетки не существует!")
-        
-        if position1 == position2: return False 
-        
-        
-        if destination.has_figure() == True:
-            if destination.get_figure().color == figure.color:
+        print()
+        print(colorize(check, font = Colors.GREEN))
+        print()
+
+        match check:
+            case 'move':
+                figure = cell1.extract_figure()
+                cell2.set_figure(figure)
+            case 'eat':
+                figure = cell1.extract_figure()
+                cell2.set_figure(figure)
+                # фигуру в удаленные
+            case 'false':
                 return False
             
-            self.eat(position1, position2)
-            return 'eat'
-
-        else:
-            can_move = figure.check_move(position1, position2)
-
-            if can_move == True:
-                figure = origin.extract_figure()
-
-                destination.set_figure(figure)
-
-                return 'move'
-            else:
-                return False
-    
-    def eat(self, position1: Position, position2: Position) -> bool:
-        cell1: Cell | NoneCell = self.table[position1.x][position1.y]
-        cell2: Cell | NoneCell = self.table[position2.x][position2.y]
-
-        figure1: Figure = cell1.get_figure()
-        figure2: Figure = cell2.get_figure()
-
-        def eat_figure():
-            figure = cell1.extract_figure()
-            cell2.set_figure(figure)
-            History.add_killed(figure)
-
-        if figure1.color == figure2.color: return False
-
-        if isinstance(figure2, King): return False
-
-        if isinstance(figure1, Pawn):
-            if abs(position1.y - position2.y) == 1 and (position2.x - position1.x) == (-1 if figure1.color == Colors.WHITE else 1):
-                eat_figure()
-                return True
-        
-        eat_figure()
         return True
-                
-
-
-        
-
-
-
-
-
-
-
-        # координаты 1 и 2
-        # чем ходить
-        # куда ходить (есть ли клетка)
-        # есть ли что есть
-        
