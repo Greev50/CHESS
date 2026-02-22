@@ -1,3 +1,5 @@
+from gpColor import colorize
+
 from src.helper import Colors, Position
 
 
@@ -9,6 +11,9 @@ class Figure:
 
     def check_move(self, old_pos: Position, new_pos: Position) -> bool:
         return True
+    
+    def __str__(self):
+        return colorize(f"\033[1m {self.icon} \033[0m", font = self.color)
 
 class NoneFigure(Figure):
     def __init__(self):
@@ -23,9 +28,26 @@ class Pawn(Figure):
         self.name = "Пешка"
         self.icon = "P"
         self.color = color
+        
+        self.is_first_move = True
 
-    # def check_move(self, old_pos: Position, new_pos: Position) -> bool:
-    #     return True
+    def check_move(self, old_pos: Position, new_pos: Position) -> bool:
+        direction = -1 if self.color == Colors.WHITE else 1
+        
+        dx = new_pos.x - old_pos.x
+        dy = abs(new_pos.y - old_pos.y)
+        
+        if dy != 0:
+            return False
+        
+        if dx == direction:
+            return True
+        
+        if self.is_first_move and dx == 2 * direction:
+            return True
+        
+        return False
+
 
 class King(Figure):
     def __init__(self, color: Colors = Colors.BLACK):
@@ -44,6 +66,14 @@ class Queen(Figure):
         self.name = "Королева"
         self.icon = "Q"
         self.color = color
+
+    def check_move(self, old_pos: Position, new_pos: Position) -> bool:
+        if any((
+            abs(old_pos.x - new_pos.x) == abs(old_pos.y - new_pos.y),
+            old_pos.x == new_pos.x or old_pos.y == new_pos.y
+        )) == True:
+            return True
+        return False
 
 class Rook(Figure):
     def __init__(self, color: Colors = Colors.BLACK):

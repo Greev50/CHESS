@@ -1,5 +1,8 @@
+from typing import List
+
 from gpColor import colorize
 
+from src.figure import Figure
 from src.helper import Colors
 
 class Player:
@@ -7,6 +10,8 @@ class Player:
         self.id = id
         self.name: str = f"Игрок {id}"
         self.color: Colors = color
+
+        self.killed_figures: List[Figure] = []
 
     def set_name(self, name):
         if isinstance(str, name):
@@ -20,3 +25,6 @@ class Player:
 
     def return_info(self):
         return colorize(f"Игрок {self.name} ({self.id})", font = self.color)
+    
+    def reset(self):
+        self.killed_figures = []

@@ -5,6 +5,7 @@ from src.helper import Colors, Position
 from src.table import Table, TableTypes
 from src.player import Player
 from src.errors import *
+from src.history import History
 
 class Gamemanager:
     def __init__(self):
@@ -14,7 +15,6 @@ class Gamemanager:
         self.current_player: Player
 
         self.is_working = True
-
 
     def temp_start(self):
         try:
@@ -47,7 +47,14 @@ class Gamemanager:
             position1 = Position(inp[0])
             position2 = Position(inp[1])
 
-            self.current_table.move_figure(position1, position2)
+            if self.current_table.table[position1.x][position1.y].get_figure() != None and self.current_table.table[position1.x][position1.y].get_figure().color != self.current_player.color: return False
+
+
+            move_description = self.current_table.move_figure(position1, position2)
+
+            if move_description != False:
+                History.add_move(position1, position2, self.current_table.table[position2.x][position2.y].get_figure(), self.current_player, move_description)
+
 
             return True
         
@@ -61,15 +68,17 @@ class Gamemanager:
     def life_cycle(self):
         while self.is_working == True:
             try:
-
-                self.current_table.print_table()
-
                 is_moved = False
+
                 while is_moved != True:
+                    self.current_table.print_table()
                     is_moved = self.move()
 
+                print() # ОСТАВИТЬ
+                print(*History.get_formatted_history(), sep = "")
                 print()
-                # self._next_player() #! ВЕРНУТЬ
+
+                self._next_player() #! ВЕРНУТЬ
 
             except Exception as e:
                 print(f"{colorize("ОШИБКА!", font = Colors.RED)} ({e})")

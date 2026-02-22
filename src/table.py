@@ -1,5 +1,6 @@
 from typing import List
 
+from src.history import History
 from src.figure import Pawn
 from src.cells import *
 from src.helper import Colors
@@ -92,14 +93,16 @@ class Table:
                     print(cell, end="")
                 print()
     
-    def move_figure(self, position1: Position, position2: Position) -> bool:
+    def move_figure(self, position1: Position, position2: Position) -> str:
 
         if self.type == TableTypes.BASIC:
             if all(0 <= x <= 7 for x in (position1.x, position1.y, position2.x, position2.y)) == False:
                 raise ValueError("Такой клетки не существует!")
+                # return False
 
         if self.table[position1.x][position1.y].has_figure() == False:
-            raise ValueError("Пустая клетка!")
+            # raise ValueError("Пустая клетка!")
+            return False
         else:
             figure: Figure = self.table[position1.x][position1.y].get_figure()
         
@@ -115,8 +118,10 @@ class Table:
         if destination.has_figure() == True:
             if destination.get_figure().color == figure.color:
                 return False
-            # eat
-            pass
+            
+            self.eat(position1, position2)
+            return 'eat'
+
         else:
             can_move = figure.check_move(position1, position2)
 
@@ -125,9 +130,41 @@ class Table:
 
                 destination.set_figure(figure)
 
-                return True
+                return 'move'
             else:
                 return False
+    
+    def eat(self, position1: Position, position2: Position) -> bool:
+        cell1: Cell | NoneCell = self.table[position1.x][position1.y]
+        cell2: Cell | NoneCell = self.table[position2.x][position2.y]
+
+        figure1: Figure = cell1.get_figure()
+        figure2: Figure = cell2.get_figure()
+
+        def eat_figure():
+            figure = cell1.extract_figure()
+            cell2.set_figure(figure)
+            History.add_killed(figure)
+
+        if figure1.color == figure2.color: return False
+
+        if isinstance(figure2, King): return False
+
+        if isinstance(figure1, Pawn):
+            if abs(position1.y - position2.y) == 1 and (position2.x - position1.x) == (-1 if figure1.color == Colors.WHITE else 1):
+                eat_figure()
+                return True
+        
+        eat_figure()
+        return True
+                
+
+
+        
+
+
+
+
 
 
 

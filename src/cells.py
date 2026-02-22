@@ -12,10 +12,8 @@ class Cell():
 
     def __str__(self):
         if self.figure and not isinstance(self.figure, NoneFigure):
-            figure_color = self.figure.color
-            bold_text = f"\033[1m {self.figure.icon} \033[0m"
 
-            return colorize(text=bold_text, font=figure_color, back=self.color)
+            return colorize(text=self.figure, back=self.color)
         else:
             return colorize(text="   ", back=self.color)
 
