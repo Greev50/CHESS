@@ -1,4 +1,3 @@
-from enum import Enum
 from gpColor import colorize
 
 from src.figure import *

@@ -1,11 +1,10 @@
-from enum import Enum
 from typing import List
 
 from src.figure import Pawn
 from src.cells import *
 from src.helper import Colors
 
-class TableTypes(Enum):
+class TableTypes():
     BASIC = "basic"
     HEXAGONAL = "hexagonal"
 
