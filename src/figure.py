@@ -73,4 +73,11 @@ class Knight(Figure):
         self.icon = "N"
         self.color = color
 
-    # def check_move(self, old_pos: Position, new_pos: Position) -> bool:
+    def check_move(self, old_pos: Position, new_pos: Position) -> bool:
+        if any((
+            abs(old_pos.x - new_pos.x) == 1 and abs(old_pos.y - new_pos.y) == 2,
+            abs(old_pos.x - new_pos.x) == 2 and abs(old_pos.y - new_pos.y) == 1,
+
+        )) == True:
+            return True
+        return False

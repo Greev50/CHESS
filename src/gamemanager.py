@@ -69,7 +69,7 @@ class Gamemanager:
                     is_moved = self.move()
 
                 print()
-                self._next_player() #! ВЕРНУТЬ
+                # self._next_player() #! ВЕРНУТЬ
 
             except Exception as e:
                 print(f"{colorize("ОШИБКА!", font = Colors.RED)} ({e})")
