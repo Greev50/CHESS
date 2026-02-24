@@ -62,22 +62,22 @@ class Gamemanager:
 
     def life_cycle(self):
         while self.is_working == True:
-            # try:
-            is_moved = False
+            try:
+                is_moved = False
 
-            while is_moved != True:
-                self.current_table.print_table()
-                is_moved = self.move()
+                while is_moved != True:
+                    self.current_table.print_table()
+                    is_moved = self.move()
 
-            print() # ОСТАВИТЬ
-            print(*History.get_formatted_history(), sep = "")
-            print()
+                print() # ОСТАВИТЬ
+                print(*History.get_formatted_history(), sep = "")
+                print()
 
-            self._next_player() #! ВЕРНУТЬ
+                self._next_player() #! ВЕРНУТЬ
 
-            # except Exception as e:
-            #     print(f"{colorize("ОШИБКА!", font = Colors.RED)} ({e})")
-            #     continue
+            except Exception as e:
+                print(f"{colorize("ОШИБКА!", font = Colors.RED)} ({e})")
+                continue
 
 
 

@@ -40,7 +40,7 @@ class Table:
 
             # ----------------------------------------------------------------------------------
 
-            # self.table[3][5].set_figure(Bishop(color = Colors.WHITE))
+            # self.table[3][5].set_figure(Queen(color = Colors.WHITE))
 
             placement = [Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook]
         
@@ -110,6 +110,7 @@ class Table:
             case 'move':
                 figure = cell1.extract_figure()
                 cell2.set_figure(figure)
+                if isinstance(figure, Pawn): figure.disable_first_move()
             case 'eat':
                 figure = cell1.extract_figure()
                 cell2.set_figure(figure)
