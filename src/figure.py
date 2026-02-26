@@ -23,7 +23,7 @@ class NoneFigure(Figure):
     def check_move(self, old_pos: Position, new_pos: Position, table) -> bool:
         return False
 
-class Pawn(Figure):
+class Pawn(Figure): # DONE
     def __init__(self, color: Colors = Colors.BLACK):
         self.name = "Пешка"
         self.icon = "P"
@@ -85,7 +85,6 @@ class Pawn(Figure):
     def disable_first_move(self):
         self.is_first_move = False
 
-
 class King(Figure): # DONE
     def __init__(self, color: Colors = Colors.BLACK):
         self.name = "Король"
@@ -110,91 +109,41 @@ class Queen(Figure): # DONE
         self.icon = "Q"
         self.color = color
 
-    def check_move(self, old_pos: Position, new_pos: Position, table) -> bool:    
-        if abs(old_pos.x - new_pos.x) == abs(old_pos.y - new_pos.y):
-            if not(abs(old_pos.x - new_pos.x) == abs(old_pos.y - new_pos.y)):
-                return 'false'
-            
-            step_x = 1 if new_pos.x > old_pos.x else -1
-            step_y = 1 if new_pos.y > old_pos.y else -1
-            
-            curr_x = old_pos.x + step_x
-            curr_y = old_pos.y + step_y
-            
-            path = []
-            
-            while curr_x != new_pos.x + step_x and curr_y != new_pos.y + step_y:
-                    
-                path.append(table[curr_x][curr_y])
-                
-                # Если на пути есть фигура - ход невозможен
-                    
-                curr_x += step_x
-                curr_y += step_y
-
-            for i in range(len(path)):
-                if path[i].has_figure() == True:
-                    if i != len(path)-1:
-                        return 'false'
-                    else:
-                        if path[i].get_figure().color != self.color:
-                            return 'eat'
-                        return 'false'
-                    
-            return 'move'
-        
-        elif old_pos.x == new_pos.x or old_pos.y == new_pos.y:
-            if not(old_pos.x == new_pos.x or old_pos.y == new_pos.y):
-                return 'false'
-            
-            step_x = 1 if new_pos.x > old_pos.x else -1
-            step_y = 1 if new_pos.y > old_pos.y else -1
-            
-            curr_x = old_pos.x + step_x
-            curr_y = old_pos.y + step_y
-            
-            path = []
-
-            print(old_pos, new_pos)
-
-            if new_pos.x != old_pos.x:
-                while curr_x != new_pos.x + step_x:
-                        
-                    path.append(table[curr_x][curr_y])
-                        
-                    curr_x += step_x
-
-                for i in range(len(path)):
-                    if path[i].has_figure() == True:
-                        if i != len(path)-1:
-                            return 'false'
-                        else:
-                            if path[i].get_figure().color != self.color:
-                                return 'eat'
-                            return 'false'
-                        
-                return 'move'
-            
-            elif new_pos.y != old_pos.y:
-                while curr_y != new_pos.y + step_y:
-                        
-                    path.append(table[curr_x][curr_y])
-                        
-                    curr_y += step_y
-
-                for i in range(len(path)):
-                    if path[i].has_figure() == True:
-                        if i != len(path)-1:
-                            return 'false'
-                        else:
-                            if path[i].get_figure().color != self.color:
-                                return 'eat'
-                            return 'false'
-                        
-                return 'move'
-        else:
+    def check_move(self, old_pos: Position, new_pos: Position, table) -> str:
+        # Проверка что ход по прямой или диагонали
+        if not (abs(old_pos.x - new_pos.x) == abs(old_pos.y - new_pos.y) or 
+                old_pos.x == new_pos.x or old_pos.y == new_pos.y):
             return 'false'
-
+        
+        # Определяем направление
+        step_x = 0
+        step_y = 0
+        if new_pos.x > old_pos.x: step_x = 1
+        elif new_pos.x < old_pos.x: step_x = -1
+        if new_pos.y > old_pos.y: step_y = 1
+        elif new_pos.y < old_pos.y: step_y = -1
+        
+        # Проверяем путь (кроме конечной клетки)
+        curr_x = old_pos.x + step_x
+        curr_y = old_pos.y + step_y
+        
+        while curr_x != new_pos.x or curr_y != new_pos.y:
+            if curr_x < 0 or curr_x >= 8 or curr_y < 0 or curr_y >= 8:
+                return 'false'
+            if table[curr_x][curr_y].has_figure():
+                return 'false'
+            curr_x += step_x
+            curr_y += step_y
+        
+        # Проверяем конечную клетку
+        target = table[new_pos.x][new_pos.y]
+        if target.has_figure():
+            if target.get_figure().color != self.color:
+                return 'eat'
+            return 'false'
+        
+        return 'move'
+    
 class Rook(Figure): # DONE
     def __init__(self, color: Colors = Colors.BLACK):
         self.name = "Ладья"
@@ -212,8 +161,6 @@ class Rook(Figure): # DONE
         curr_y = old_pos.y + step_y
         
         path = []
-
-        print(old_pos, new_pos)
 
         if new_pos.x != old_pos.x:
             while curr_x != new_pos.x + step_x:

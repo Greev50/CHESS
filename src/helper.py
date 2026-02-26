@@ -1,12 +1,23 @@
 from src.errors import *
 
 class Position:
-    def __init__(self, position: str):
-        x, y = self._convert(position)
+    def __init__(self, *position):
+        if len(position) == 1:
+            x, y = self._convert_xy(position[0])
 
-        if self._validate_pos((x, y)) == True:
-            self.x, self.y = x, y
-            self.position = position
+            if self._validate_pos((x, y)) == True:
+                self.x, self.y = x, y
+                self.position = position[0]
+            else:
+                raise WrongPositionError()
+        elif len(position) == 2:
+            x, y = [int(x) for x in position]
+
+            if self._validate_pos((x, y)) == True:
+                self.x, self.y = x, y
+                self.position = self._convert_a(x, y)
+            else:
+                raise WrongPositionError()
         else:
             raise WrongPositionError()
 
@@ -19,7 +30,7 @@ class Position:
             return True
         return False
     
-    def _convert(self, position: str):
+    def _convert_xy(self, position: str):
         letter = position[0]
         number = position[1]
 
@@ -28,6 +39,17 @@ class Position:
         x = 8 - int(number)
         
         return (x, y)
+    
+    def _convert_a(self, x: int, y: int) -> str:
+        if not (0 <= x < 8 and 0 <= y < 8):
+            raise WrongPositionError()
+        
+        letter = chr(ord('a') + y)
+        
+        number = str(8 - x)
+        
+        return f"{letter}{number}"
+        
     
     def __eq__(self, other):
         if not isinstance(other, Position):
