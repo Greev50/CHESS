@@ -2,7 +2,6 @@ from gpColor import colorize
 
 from src.helper import Colors, Position
 
-
 class Figure:
     def __init__(self, color: Colors = Colors.BLACK):
         self.name = None
@@ -77,13 +76,28 @@ class Pawn(Figure): # DONE
         else:
             return 'false'
         
-            
-            
-
-
-        
     def disable_first_move(self):
         self.is_first_move = False
+
+    def last_cell_transform(self) -> Figure:
+        is_selected = False
+
+        figures = {}
+        
+        for x in transform_figures:
+            figures[x.icon] = type(x)
+
+        while is_selected == False:
+            print(" | ".join([f"{x.icon} ({x.name})" for x in transform_figures]))
+            figure = str(input("Выберите, в какую фигуру превратится пешка: ")).upper()
+
+            if figure in figures.keys():
+                return figures[figure]
+
+
+            
+
+
 
 class King(Figure): # DONE
     def __init__(self, color: Colors = Colors.BLACK):
@@ -258,3 +272,5 @@ class Knight(Figure): # DONE
                 return 'eat'
         
         return 'move'
+    
+transform_figures = [Queen(), Rook(), Bishop(), Knight()]

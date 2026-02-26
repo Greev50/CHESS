@@ -1,6 +1,7 @@
 from typing import List
 from gpColor import colorize
 
+from src.figure import Pawn
 from src.helper import Colors, Position
 from src.table import Table, TableTypes
 from src.player import Player
@@ -61,6 +62,36 @@ class Gamemanager:
 
 
     def life_cycle(self):
+
+        def round_check():
+            # Пешка в другую фигуру. не динамическое
+            # ============================================
+            for cell in self.current_table.table[0]:
+                figure = cell.get_figure()
+
+                if isinstance(figure, Pawn):
+                    if figure.color == Colors.WHITE:
+                        cell.change_figure(figure.last_cell_transform())
+
+            for cell in self.current_table.table[-1]:
+                figure = cell.get_figure()
+
+                if isinstance(figure, Pawn):
+                    if figure.color == Colors.BLACK:
+                        cell.change_figure(figure.last_cell_transform())
+            # ============================================
+
+
+            check = self.current_table.try_check()
+            checkmate = self.current_table.try_checkmate(check)
+
+            if len(check) != 0:
+                if len(checkmate) == 0:
+                    print(f"Шах! {check}")
+                else:
+                    print(f"Мат! {checkmate}")
+                    
+
         while self.is_working == True:
             # try:
                 is_moved = False
@@ -75,14 +106,7 @@ class Gamemanager:
 
                 # print(self.current_table.try_check())
 
-                check = self.current_table.try_check()
-                checkmate = self.current_table.try_checkmate(check)
-
-                if len(check) != 0:
-                    if len(checkmate) == 0:
-                        print(f"Шах! {check}")
-                    else:
-                        print(f"Мат! {checkmate}")
+                round_check()
 
                 self._next_player() #! ВЕРНУТЬ
 

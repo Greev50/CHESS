@@ -23,6 +23,12 @@ class Cell():
     
     def set_figure(self, figure: Figure):
         self.figure = figure
+
+    def change_figure(self, figure: Figure): # С ЗАПИСЬЮ В ИСТОРИЮ
+        if not isinstance(self.figure, Pawn): return False
+
+        self.figure = figure(color = self.figure.color)
+        print("СМЕНИЛАСЬ ФИГУРА (ЗАСУНЬ В ИСТОРИЮ)")
     
     def remove_figure(self):
         self.figure = None

@@ -41,7 +41,6 @@ class Table:
             # ----------------------------------------------------------------------------------
 
             # self.table[3][4].set_figure(King(color = Colors.BLACK))
-            self.table[3][5].set_figure(Queen(color = Colors.WHITE))
 
             placement = [Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook]
         
@@ -50,6 +49,8 @@ class Table:
 
             [cell.set_figure(Pawn(color = Colors.WHITE)) for cell in self.table[-2]]
             [self.table[-1][i].set_figure(placement[i](color = Colors.WHITE)) for i in range(len(self.table[-1]))]
+            
+            self.table[1][-2].set_figure(Pawn(color = Colors.WHITE))
 
         elif self.type == TableTypes.HEXAGONAL:
             table = [
@@ -132,7 +133,7 @@ class Table:
         
         return ans
     
-    def try_check(self): #TODO: доделать проверку на мат сука блять ъ
+    def try_check(self): 
         kings = self._get_kings()
 
         under_check = []
