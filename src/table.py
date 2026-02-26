@@ -168,30 +168,35 @@ class Table:
         #         king.try_checkmate(king_info[1], self)
 
     def try_checkmate(self, under_check: list):
-        if len(under_check) < 1: return False
-
+        if len(under_check) < 1: 
+            return []
+        
         checkmate_kings = []
-
-
+        
         for king, king_pos in under_check:
-            table_size = self.get_size()
-            accessable_moves = []
-
-            up_border = max(king_pos.x, table_size[0])
-            down_border = min(0, king_pos.x)
-            left_border = min(0, king_pos.y)
-            right_border = max(table_size[1], king_pos.y)
-
-            for x in range(min(up_border, king_pos.x-1), max(down_border, king_pos.x+1)+1):
-                for y in range(max(left_border, king_pos.y-1), min(right_border, king_pos.y+1)+1):
-                    cell = self.table[x][y]
-                    if cell.has_figure() == False:
-                        position = Position(x, y)
-                        if self.position_check(position, king.color) == False:
-                            accessable_moves.append(position)
-
-            if len(accessable_moves) < 1:
-                checkmate_kings.append(king)
+            safe_moves = []
+            
+            for dx in [-1, 0, 1]:
+                for dy in [-1, 0, 1]:
+                    if dx == 0 and dy == 0:
+                        continue
+                        
+                    nx = king_pos.x + dx
+                    ny = king_pos.y + dy
+                    
+                    if not (0 <= nx < 8 and 0 <= ny < 8):
+                        continue
+                    
+                    target = self.table[nx][ny]
+                    if target.has_figure() and target.get_figure().color == king.color:
+                        continue
+                    
+                    if not self.position_check(Position(nx, ny), king.color):
+                        safe_moves.append((nx, ny))
+            
+            if len(safe_moves) == 0:
+                if self.position_check(king_pos, king.color):
+                    checkmate_kings.append(king)
         
         return checkmate_kings
 
@@ -203,3 +208,4 @@ class Table:
         y = max(len(z) for z in self.table) - 1
 
         return (x, y)
+
