@@ -8,6 +8,7 @@ from src.helper import Colors
 class TableTypes():
     BASIC = "basic"
     HEXAGONAL = "hexagonal"
+    TEST = "test"  
 
 
 class Table:
@@ -50,8 +51,6 @@ class Table:
             [cell.set_figure(Pawn(color = Colors.WHITE)) for cell in self.table[-2]]
             [self.table[-1][i].set_figure(placement[i](color = Colors.WHITE)) for i in range(len(self.table[-1]))]
             
-            self.table[1][-2].set_figure(Pawn(color = Colors.WHITE))
-
         elif self.type == TableTypes.HEXAGONAL:
             table = [
                 [NoneCell(), NoneCell(), Cell(color = Colors.DARK), NoneCell(), NoneCell()], # 5
@@ -79,9 +78,36 @@ class Table:
 
             self.table = table
 
+        elif self.type == TableTypes.TEST:
+                    # Генерация тестовой позиции для проверки шаха и мата
+                    # Создаём пустую доску 8x8 с правильными цветами клеток
+                    for x in range(8):
+                        line = []
+                        for y in range(8):
+                            color = Colors.LIGHT if (x + y) % 2 == 0 else Colors.DARK
+                            line.append(Cell(color))
+                        self.table.append(line)
+
+                    # Расставляем фигуры вручную
+                    # Белый король на e1 (ряд 7, колонка e = 4)
+                    self.table[7][4].set_figure(King(color=Colors.WHITE))
+
+                    # Черный ферзь на e4 (ряд 4, колонка e) – даёт шах
+                    self.table[4][4].set_figure(Queen(color=Colors.BLACK))
+
+                    # Белая ладья на a4 (ряд 4, колонка a = 0) – может съесть ферзя
+                    self.table[4][0].set_figure(Rook(color=Colors.WHITE))
+
+                    # Белая пешка на d2 (ряд 6, колонка d = 3) – мешает королю уйти на d2
+                    self.table[6][3].set_figure(Pawn(color=Colors.WHITE))
+
+                    # Чёрная пешка на f2 (ряд 6, колонка f = 5) – для дополнительной опасности
+                    self.table[6][5].set_figure(Pawn(color=Colors.BLACK))
+
+                    # Здесь можно добавить ещё фигур по желанию
 
     def print_table(self):
-        if self.type == TableTypes.BASIC:
+        if self.type in (TableTypes.BASIC, TableTypes.TEST):
             letters = ["a", "b", "c", "d", "e", "f", "g", "h"][:self.size[0]]
             
             print("   ", end="")
@@ -129,7 +155,7 @@ class Table:
                 figure = self.table[line_index][cell_index].get_figure()
                 if isinstance(figure, King):
                     figure_position = Position(line_index, cell_index)
-                    ans.append((figure, figure_position))
+                    ans.append([figure, figure_position])
         
         return ans
     
@@ -142,12 +168,16 @@ class Table:
             current_king = kings[i]
             king_color = current_king[0].color
 
-            if self.position_check(kings[i][1], king_color) == True:
-                under_check.append(kings[i])
+            attacking_figures = self.position_check(kings[i][1], king_color)
+
+            if len(attacking_figures) > 0:
+                under_check.append([kings[i][0], kings[i][1], attacking_figures])
 
         return under_check
     
     def position_check(self, position: Position, under_attack_figure_color: Colors):
+        attacking_figures = []
+
         for line_index in range(len(self.table)):
             for cell_index in range(len(self.table[line_index])):
                 if self.table[line_index][cell_index].has_figure():
@@ -158,8 +188,8 @@ class Table:
                     result = figure.check_move(Position(line_index, cell_index), position, self.table) 
 
                     if result in ['move', 'eat']:
-                        return True
-        return False
+                        attacking_figures.append(Position(line_index, cell_index))
+        return attacking_figures
 
 
         # if len(under_check) < 1: return 'false'
@@ -174,8 +204,9 @@ class Table:
         
         checkmate_kings = []
         
-        for king, king_pos in under_check:
+        for king, king_pos, attacking_figures_positions in under_check:
             safe_moves = []
+            king_defenders = []
             
             for dx in [-1, 0, 1]:
                 for dy in [-1, 0, 1]:
@@ -191,15 +222,40 @@ class Table:
                     target = self.table[nx][ny]
                     if target.has_figure() and target.get_figure().color == king.color:
                         continue
+
+                    for attacking_figure_position in attacking_figures_positions:
+                        defenders = self.get_defenders(king.color, attacking_figure_position)
+                        if len(defenders) > 0:
+                            for x in defenders: king_defenders.append(x)
                     
-                    if not self.position_check(Position(nx, ny), king.color):
+                    if len(self.position_check(Position(nx, ny), king.color)) == 0:
                         safe_moves.append((nx, ny))
             
             if len(safe_moves) == 0:
-                if self.position_check(king_pos, king.color):
+                if len(king_defenders) == 0:
                     checkmate_kings.append(king)
         
         return checkmate_kings
+    
+    def get_defenders(self, color: Colors, attacking_figure_position: Position):
+        defenders = []
+
+        for line_index in range(len(self.table)):
+            for cell_index in range(len(self.table[line_index])):
+                if self.table[line_index][cell_index].has_figure():
+                    figure = self.table[line_index][cell_index].get_figure()
+
+                    if figure.color != color: continue
+
+                    can_eat = figure.check_move(Position(line_index, cell_index), attacking_figure_position, self.table)
+                    if can_eat == 'eat': 
+                        defenders.append(Position(line_index, cell_index))
+        
+        return defenders
+
+
+        
+        
 
 
 

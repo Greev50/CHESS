@@ -17,9 +17,9 @@ class Gamemanager:
 
         self.is_working = True
 
-    def temp_start(self):
+    def temp_start(self, table_type: TableTypes = TableTypes.BASIC):
         try:
-            self.current_table = Table(type = TableTypes.BASIC)
+            self.current_table = Table(type = table_type)
             self.current_table.generate_table()
 
 
@@ -127,6 +127,10 @@ class Gamemanager:
     def _quit(self):
         self.is_working = False
         print(colorize("\nВыход из шахмат!", font = Colors.GREEN))
+
+    # def check(self. king_color: Colors):
+        
+    #     print("Шах ")
 
 
         
