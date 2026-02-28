@@ -87,9 +87,13 @@ class Gamemanager:
 
             if len(check) != 0:
                 if len(checkmate) == 0:
-                    print(f"Шах! {check}")
+                    for king, king_position, attacking_figures in check:
+                        color = king.color
+                        self.check(color)
                 else:
-                    print(f"Мат! {checkmate}")
+                    for king in checkmate:
+                        color = king.color
+                        self.checkmate(color)
                     
 
         while self.is_working == True:
@@ -128,9 +132,23 @@ class Gamemanager:
         self.is_working = False
         print(colorize("\nВыход из шахмат!", font = Colors.GREEN))
 
-    # def check(self. king_color: Colors):
-        
-    #     print("Шах ")
+    def check(self, king_color: Colors):
+        text = f"Шах королю {Colors.color_to_name(king_color)[:-1]}х!\n"
+
+        print(colorize(text, font = Colors.ORANGE))
+
+    def checkmate(self, king_color: Colors):
+        text = f"Мат королю {Colors.color_to_name(king_color)[:-1]}х!\n"
+
+        print(colorize(text, font = Colors.RED))
+
+        self.is_working = False
+
+        for player in self.players:
+            player.reset()
+
+
+
 
 
         

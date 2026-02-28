@@ -76,3 +76,26 @@ class Colors():
 
     GREEN = "#16D408"
     RED = "#FF4343"
+    ORANGE = "#FF7B00"
+
+    translator = {
+            BLACK : "черный",
+            WHITE : "белый",
+
+            DARK : "темный",
+            MIDDLE : "серо-буро-малиновый",
+            LIGHT : "светлый",
+
+            GREEN : "зеленый",
+            RED : "красный",
+            ORANGE : "оранжевый",
+        }
+
+    @classmethod
+    def color_to_name(cls, color):
+        try:
+            text = cls.translator[color]
+            return text
+        
+        except Exception as e:
+            raise ValueError("Такого цвета нет!")

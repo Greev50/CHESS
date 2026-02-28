@@ -192,12 +192,6 @@ class Table:
         return attacking_figures
 
 
-        # if len(under_check) < 1: return 'false'
-        # else:
-        #     for king_info in under_check:
-        #         king = king_info[0]
-        #         king.try_checkmate(king_info[1], self)
-
     def try_checkmate(self, under_check: list):
         if len(under_check) < 1: 
             return []
