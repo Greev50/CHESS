@@ -1,8 +1,6 @@
 from gpColor import colorize
-
 from src.figure import *
 from src.helper import Colors
-
 
 class Cell():
     def __init__(self, color: Colors, figure: Figure = None):
@@ -12,11 +10,9 @@ class Cell():
 
     def __str__(self):
         if self.figure and not isinstance(self.figure, NoneFigure):
-
             return colorize(text=self.figure, back=self.color)
         else:
             return colorize(text="   ", back=self.color)
-
     
     def get_figure(self):
         return self.figure
@@ -24,11 +20,16 @@ class Cell():
     def set_figure(self, figure: Figure):
         self.figure = figure
 
-    def change_figure(self, figure: Figure): # С ЗАПИСЬЮ В ИСТОРИЮ
-        if not isinstance(self.figure, Pawn): return False
 
-        self.figure = figure(color = self.figure.color)
-        print("СМЕНИЛАСЬ ФИГУРА (ЗАСУНЬ В ИСТОРИЮ)")
+    def change_figure(self, figure_class): 
+        # Теперь метод принимает класс (например, Queen), а не объект
+        if not self.has_figure(): return False
+        
+        # Сохраняем цвет, но меняем тип фигуры
+        self.figure = figure_class(color = self.figure.color)
+        print(f"ФИГУРА ПРЕВРАТИЛАСЬ В {self.figure.name}")
+        return True
+    
     
     def remove_figure(self):
         self.figure = None
@@ -36,12 +37,10 @@ class Cell():
     def extract_figure(self) -> Figure:
         figure = self.figure
         self.remove_figure()
-
         return figure
-        
 
     def has_figure(self):
-        return self.figure != None        
+        return self.figure is not None     
 
 class NoneCell(Cell):
     def __init__(self):
