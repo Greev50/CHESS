@@ -39,12 +39,9 @@ class Gamemanager:
                 print("Это не твоя фигура или клетка пуста!")
                 return False
             
-            # Вызываем перемещение
+            
             res = self.current_table.move_figure(p1, p2)
-            
-            # ОТЛАДКА: если тут False при визуальном прыжке — беда в table.py
-            # print(f"DEBUG: move_figure returned {res}") 
-            
+
             return res 
             
         except Exception as e:
@@ -54,25 +51,23 @@ class Gamemanager:
 
     def life_cycle(self):
         while self.is_working:
-            # 1. Печатаем доску
+            
             self.current_table.print_table()
             
-            # 2. Ждем валидного хода
             is_moved = False
             while not is_moved:
-                # Вызываем твой новый move(), который мы только что поправили
+                
                 if self.move(): 
                     is_moved = True
                 else:
                     print("ОШИБКА ХОДА! Попробуй еще раз.")
 
-            # 3. Как только вышли из цикла — СРАЗУ меняем игрока
             self._next_player()
             print(f"--- Очередь перешла к: {self.current_player.return_name()} ---")
 
 
     def round_check(self):
-        # Превращение пешек на крайних линиях
+        
         for i, row_idx in enumerate([0, 7]):
             color = Colors.WHITE if i == 0 else Colors.BLACK
             for cell in self.current_table.table[row_idx]:
@@ -80,17 +75,16 @@ class Gamemanager:
                 if isinstance(fig, Pawn) and fig.color == color:
                     cell.change_figure(fig.last_cell_transform())
         
-        # Проверка шаха и мата
         checks = self.current_table.try_check()
         if checks:
             for king, pos, attackers in checks:
                 enemy_color = king.color
                 print(colorize(f"\n ШАХ {Colors.color_to_name(enemy_color)}! ", font=Colors.ORANGE))
                 
-                # Вызываем проверку на мат для короля, которому объявили шах
+                
                 if self.current_table.is_checkmate(enemy_color):
                     print(colorize(f"\n МАТ! Игрок {self.current_player.return_name()} побеждает! ", font=Colors.RED))
-                    self.is_working = False # Останавливаем игру
+                    self.is_working = False 
 
     def _next_player(self):
         self.current_player = self.players[1] if self.current_player == self.players[0] else self.players[0]

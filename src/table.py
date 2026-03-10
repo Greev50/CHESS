@@ -1,7 +1,7 @@
-from src.figure import *
 from src.cells import Cell
 from src.helper import Colors, Position
 from gpColor import colorize
+from src.figure import *
 
 class TableTypes:
     BASIC = "basic"
@@ -31,33 +31,31 @@ class Table:
                         elif x > 4: self.table[x][y].set_figure(Checker(Colors.WHITE))
 
     def print_table(self):
-        print("    a  b  c  d  e  f  g  h")
+        print("   a  b  c  d  e  f  g  h")
         for i, line in enumerate(self.table):
             print(f"{8-i} ", end="")
             for cell in line: print(cell, end="")
             print(f" {8-i}")
-        print("    a  b  c  d  e  f  g  h")
+        print("   a  b  c  d  e  f  g  h")
 
 
     def _execute_jump(self, p1: Position, p2: Position):
         """Универсальное перемещение с удалением фигуры на пути"""
-        # Определяем направление движения
+        
         dx = 1 if p2.x > p1.x else -1
         dy = 1 if p2.y > p1.y else -1
         
-        # Проходим по клеткам между стартом и финишем
+        
         curr_x, curr_y = p1.x + dx, p1.y + dy
         while (curr_x, curr_y) != (p2.x, p2.y):
-            # Если наткнулись на фигуру — удаляем её (это враг)
+            
             if self.table[curr_x][curr_y].has_figure():
                 self.table[curr_x][curr_y].remove_figure()
-                # В шашках за один прыжок съедаем одну фигуру, 
-                # поэтому после удаления первой встречной выходим из цикла
                 break 
             curr_x += dx
             curr_y += dy
 
-        # Переставляем саму шашку
+        
         fig = self.table[p1.x][p1.y].extract_figure()
         self.table[p2.x][p2.y].set_figure(fig)
 
@@ -71,7 +69,7 @@ class Table:
         directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
         
         if isinstance(figure, Queen):
-            # Логика "летающей" дамки
+            
             for dx, dy in directions:
                 found_enemy = False
                 curr_x, curr_y = pos.x + dx, pos.y + dy
@@ -80,19 +78,19 @@ class Table:
                     if not found_enemy:
                         if self.table[curr_x][curr_y].has_figure():
                             if self.table[curr_x][curr_y].get_figure().color == figure.color:
-                                break # Свой блокирует путь
+                                break 
                             else:
-                                found_enemy = True # Нашли врага, смотрим клетки ЗА ним
+                                found_enemy = True 
                     else:
-                        # Мы уже перепрыгнули врага
+                        
                         if not self.table[curr_x][curr_y].has_figure():
                             jumps.append(Position(curr_x, curr_y))
                         else:
-                            break # Путь закрыт другой фигурой
+                            break 
                     curr_x += dx
                     curr_y += dy
         else:
-            # Логика обычной шашки
+            
             for dx, dy in directions:
                 mid_x, mid_y = pos.x + dx, pos.y + dy
                 end_x, end_y = pos.x + 2 * dx, pos.y + 2 * dy
@@ -112,7 +110,7 @@ class Table:
             next_pos = jumps[0]
             self._execute_jump(pos, next_pos)
             print(colorize(f" АВТО-ПРЫЖОК: {pos.position} -> {next_pos.position} ", font=Colors.ORANGE))
-            # После прыжка проверяем — не стали ли мы дамкой прямо сейчас
+            
             fig = self.table[next_pos.x][next_pos.y].get_figure()
             self.check_promotion(fig, next_pos)
             self.continue_jump(next_pos) 
@@ -140,33 +138,26 @@ class Table:
         if not figure: 
             return False
 
-        # Получаем вердикт от фигуры (Checker или Queen)
         check = figure.check_move(position1, position2, self.table)
 
         if check == 'move':
             fig = cell1.extract_figure()
             self.table[position2.x][position2.y].set_figure(fig)
             self.check_promotion(fig, position2)
-            return True # ХОД УСПЕШЕН -> Смена очереди
+            return True 
                 
         elif check in ['eat', 'eat_checker']: 
-            # 1. Выполняем само взятие (удаление врага)
+            
             self._execute_jump(position1, position2)
             
-            # 2. Берем фигуру в новой точке
             current_fig = self.table[position2.x][position2.y].get_figure()
             
-            # 3. Проверяем превращение в дамку
             self.check_promotion(current_fig, position2)
             
-            # 4. Проверяем на серию прыжков (комбо)
-            # Даже если серия продолжается, текущий ввод d4 b6 УЖЕ ВАЛИДЕН
             self.continue_jump(position2)
             
-            # САМОЕ ВАЖНОЕ: возвращаем True, чтобы Gamemanager увидел успех
-            return True # ХОД УСПЕШЕН -> Смена очереди
+            return True 
 
-        # Если дошли до этой строки, значит ход реально невозможен
         return False
     
 
@@ -180,10 +171,10 @@ class Table:
         if is_white_promo or is_black_promo:
             self.table[pos.x][pos.y].change_figure(Queen)
             color_name = "БЕЛАЯ" if figure.color == Colors.WHITE else "ЧЕРНАЯ"
-            # ЗАМЕНИ Colors.CYAN на Colors.GREEN (или проверь свои Colors в helper.py)
+            
             print(colorize(f" {color_name} ШАШКА СТАЛА ДАМКОЙ! ", font=Colors.GREEN))
 
-    # --- Остальные шахматные методы (try_check, is_checkmate) оставляем как есть ---
+    
     def try_check(self):
         kings = []
         for x in range(8):
@@ -233,40 +224,40 @@ class Table:
         if not figure: 
             return longest_path
 
-        # Проверяем 4 диагонали (шашки могут бить назад)
+        
         directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
         
         for dx, dy in directions:
             mid_x, mid_y = pos.x + dx, pos.y + dy
             end_x, end_y = pos.x + 2 * dx, pos.y + 2 * dy
             
-            # Если прыжок не выходит за границы доски
+            
             if 0 <= end_x < 8 and 0 <= end_y < 8:
                 mid_cell = self.table[mid_x][mid_y]
                 end_cell = self.table[end_x][end_y]
                 
-                # Если на пути враг, а за ним пусто — можно прыгать
+                
                 if mid_cell.has_figure() and mid_cell.get_figure().color != figure.color and not end_cell.has_figure():
                     
-                    # 1. СИМУЛЯЦИЯ ПРЫЖКА (делаем ход)
+                    
                     eaten_fig = mid_cell.extract_figure()
                     self.table[end_x][end_y].set_figure(figure)
                     self.table[pos.x][pos.y].remove_figure()
                     
-                    # 2. РЕКУРСИЯ (ищем прыжки дальше из новой точки)
+                    
                     new_path = current_path + [Position(end_x, end_y)]
                     path_from_here = self.get_longest_capture_path(Position(end_x, end_y), new_path)
                     
-                    # Запоминаем самый длинный путь
+                    
                     if len(path_from_here) > len(longest_path):
                         longest_path = path_from_here
                         
-                    # 3. ОТКАТ СИМУЛЯЦИИ (возвращаем доску как было для проверки других веток)
+                    
                     self.table[pos.x][pos.y].set_figure(figure)
                     self.table[end_x][end_y].remove_figure()
                     mid_cell.set_figure(eaten_fig)
                     
-        # Если дальше прыгать некуда, возвращаем то, что накопили
+        
         if not longest_path:
             longest_path = current_path
             

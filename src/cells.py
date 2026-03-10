@@ -22,10 +22,8 @@ class Cell():
 
 
     def change_figure(self, figure_class): 
-        # Теперь метод принимает класс (например, Queen), а не объект
         if not self.has_figure(): return False
         
-        # Сохраняем цвет, но меняем тип фигуры
         self.figure = figure_class(color = self.figure.color)
         print(f"ФИГУРА ПРЕВРАТИЛАСЬ В {self.figure.name}")
         return True
