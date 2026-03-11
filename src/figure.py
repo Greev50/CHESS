@@ -62,7 +62,8 @@ class Pawn(Figure):
         if dx == direction and abs(dy) == 1:
             if table[new_pos.x][new_pos.y].has_figure() and \
                table[new_pos.x][new_pos.y].get_figure().color != self.color:
-                return 'eat'
+                if not isinstance(table[new_pos.x][new_pos.y].get_figure(), Tank):
+                    return 'eat'
         
         return 'false'
     
