@@ -1,0 +1,889 @@
+cells.py
+----------
+from gpColor import colorize
+from src.figure import *
+from src.helper import Colors
+
+class Cell():
+    def __init__(self, color: Colors, figure: Figure = None):
+        self.color = color
+        self.figure = figure
+        self.can_move_on = True
+
+    def __str__(self):
+        if self.figure and not isinstance(self.figure, NoneFigure):
+            return colorize(text=self.figure, back=self.color)
+        else:
+            return colorize(text="   ", back=self.color)
+    
+    def get_figure(self):
+        return self.figure
+    
+    def set_figure(self, figure: Figure):
+        self.figure = figure
+
+
+    def change_figure(self, figure_class): 
+        if not self.has_figure(): return False
+        
+        self.figure = figure_class(color = self.figure.color)
+        print(f"ФИГУРА ПРЕВРАТИЛАСЬ В {self.figure.name}")
+        return True
+    
+    
+    def remove_figure(self):
+        self.figure = None
+
+    def extract_figure(self) -> Figure:
+        figure = self.figure
+        self.remove_figure()
+        return figure
+
+    def has_figure(self):
+        return self.figure is not None     
+
+class NoneCell(Cell):
+    def __init__(self):
+        super().__init__(None, None)
+        self.can_move_on = False
+
+    def __str__(self):
+        return "   "
+
+figure.py
+-------------
+from gpColor import colorize
+from src.helper import Colors, Position
+
+class Figure:
+    def __init__(self, color: Colors = Colors.BLACK):
+        self.name = "Фигура"
+        self.icon = "●"
+        self.color = color
+
+    def check_move(self, old_pos: Position, new_pos: Position, table) -> str:
+        return 'false'
+    
+    def __str__(self):
+        return colorize(f"\033[1m {self.icon} \033[0m", font=self.color)
+    
+class NoneFigure(Figure):
+    def __init__(self):
+        self.icon = " "
+    def check_move(self, *args) -> str:
+        return 'false'
+    
+
+class Pawn(Figure): 
+    def __init__(self, color: Colors = Colors.BLACK):
+        super().__init__(color)
+        self.name = "Пешка"
+        self.icon = "P"  
+
+    def check_move(self, old_pos: Position, new_pos: Position, table) -> str:
+        dx = new_pos.x - old_pos.x
+        dy = new_pos.y - old_pos.y
+        
+        if self.color == Colors.WHITE:
+            if dx != -1 and dx != -2:  
+                return 'false'
+            direction = -1
+        else:  
+            if dx != 1 and dx != 2:  
+                return 'false'
+            direction = 1
+        
+        is_first_move = (self.color == Colors.WHITE and old_pos.x == 6) or \
+                        (self.color == Colors.BLACK and old_pos.x == 1)
+        
+        if dx == direction and dy == 0:
+            if not table[new_pos.x][new_pos.y].has_figure():
+                return 'move'
+        
+        if dx == 2 * direction and dy == 0 and is_first_move:
+            mid_x = old_pos.x + direction
+            if not table[mid_x][old_pos.y].has_figure() and not table[new_pos.x][new_pos.y].has_figure():
+                return 'move'
+        
+        if dx == direction and abs(dy) == 1:
+            if table[new_pos.x][new_pos.y].has_figure() and \
+               table[new_pos.x][new_pos.y].get_figure().color != self.color:
+                if not isinstance(table[new_pos.x][new_pos.y].get_figure(), Tank):
+                    return 'eat'
+        
+        return 'false'
+    
+
+class King(Figure):
+    def __init__(self, color: Colors = Colors.BLACK):
+        super().__init__(color)
+        self.name = "Король"
+        self.icon = "K"
+
+    def check_move(self, old_pos: Position, new_pos: Position, table) -> str:
+        if abs(old_pos.x - new_pos.x) <= 1 and abs(old_pos.y - new_pos.y) <= 1:
+            if table[new_pos.x][new_pos.y].has_figure():
+                return 'eat' if table[new_pos.x][new_pos.y].get_figure().color != self.color else 'false'
+            return 'move'
+        return 'false'
+
+
+class Queen(Figure):  
+    def __init__(self, color: Colors = Colors.BLACK):
+        super().__init__(color)
+        self.name = "Ферзь"
+        self.icon = "Q"
+
+    def check_move(self, old_pos: Position, new_pos: Position, table) -> str:
+        dx = new_pos.x - old_pos.x
+        dy = new_pos.y - old_pos.y
+        
+        if not (dx == 0 or dy == 0 or abs(dx) == abs(dy)):
+            return 'false'
+        
+        step_x = 0 if dx == 0 else (1 if dx > 0 else -1)
+        step_y = 0 if dy == 0 else (1 if dy > 0 else -1)
+        
+        curr_x, curr_y = old_pos.x + step_x, old_pos.y + step_y
+        while (curr_x, curr_y) != (new_pos.x, new_pos.y):
+            if table[curr_x][curr_y].has_figure():
+                return 'false'
+            curr_x += step_x
+            curr_y += step_y
+        
+        if table[new_pos.x][new_pos.y].has_figure():
+            return 'eat' if table[new_pos.x][new_pos.y].get_figure().color != self.color else 'false'
+        return 'move'
+    
+
+class Rook(Figure):
+    def __init__(self, color: Colors = Colors.BLACK):
+        super().__init__(color)
+        self.name = "Ладья"
+        self.icon = "R"
+
+    def check_move(self, old_pos: Position, new_pos: Position, table) -> str:
+        if not (old_pos.x == new_pos.x or old_pos.y == new_pos.y): 
+            return 'false'
+        step_x = (new_pos.x > old_pos.x) - (new_pos.x < old_pos.x)
+        step_y = (new_pos.y > old_pos.y) - (new_pos.y < old_pos.y)
+        curr_x, curr_y = old_pos.x + step_x, old_pos.y + step_y
+        while (curr_x, curr_y) != (new_pos.x, new_pos.y):
+            if table[curr_x][curr_y].has_figure(): 
+                return 'false'
+            curr_x += step_x
+            curr_y += step_y
+        if table[new_pos.x][new_pos.y].has_figure():
+            return 'eat' if table[new_pos.x][new_pos.y].get_figure().color != self.color else 'false'
+        return 'move'
+
+class Bishop(Figure):
+    def __init__(self, color: Colors = Colors.BLACK):
+        super().__init__(color)
+        self.name = "Слон"
+        self.icon = "B"
+
+    def check_move(self, old_pos: Position, new_pos: Position, table) -> str:
+        if abs(old_pos.x - new_pos.x) != abs(old_pos.y - new_pos.y): 
+            return 'false'
+        step_x = (new_pos.x > old_pos.x) - (new_pos.x < old_pos.x)
+        step_y = (new_pos.y > old_pos.y) - (new_pos.y < old_pos.y)
+        curr_x, curr_y = old_pos.x + step_x, old_pos.y + step_y
+        while (curr_x, curr_y) != (new_pos.x, new_pos.y):
+            if table[curr_x][curr_y].has_figure(): 
+                return 'false'
+            curr_x += step_x
+            curr_y += step_y
+        if table[new_pos.x][new_pos.y].has_figure():
+            return 'eat' if table[new_pos.x][new_pos.y].get_figure().color != self.color else 'false'
+        return 'move'
+
+class Knight(Figure):
+    def __init__(self, color: Colors = Colors.BLACK):
+        super().__init__(color)
+        self.name = "Конь"
+        self.icon = "N"
+
+    def check_move(self, old_pos: Position, new_pos: Position, table) -> str:
+        if sorted([abs(old_pos.x - new_pos.x), abs(old_pos.y - new_pos.y)]) == [1, 2]:
+            if table[new_pos.x][new_pos.y].has_figure():
+                return 'eat' if table[new_pos.x][new_pos.y].get_figure().color != self.color else 'false'
+            return 'move'
+        return 'false'
+
+class Jester(Figure):
+    def __init__(self, color: Colors = Colors.BLACK):
+        super().__init__(color)
+        self.name = "Шут"
+        self.icon = "J"
+
+    def check_move(self, old_pos: Position, new_pos: Position, table) -> str:
+        if sorted([abs(old_pos.x - new_pos.x), abs(old_pos.y - new_pos.y)]) == [1, 2]:
+            if table[new_pos.x][new_pos.y].has_figure() and table[new_pos.x][new_pos.y].get_figure().color != self.color:
+                return 'eat'
+        return 'false'
+
+class Tank(Figure):
+    def __init__(self, color: Colors = Colors.BLACK):
+        super().__init__(color)
+        self.name = "Танк"
+        self.icon = "T"
+
+    def check_move(self, old_pos: Position, new_pos: Position, table) -> str:
+        if abs(old_pos.x - new_pos.x) <= 1 and abs(old_pos.y - new_pos.y) <= 1:
+            if table[new_pos.x][new_pos.y].has_figure():
+                return 'eat' if table[new_pos.x][new_pos.y].get_figure().color != self.color else 'false'
+            return 'move'
+        return 'false'
+
+class Ghost(Figure):
+    def __init__(self, color: Colors = Colors.BLACK):
+        super().__init__(color)
+        self.name = "Призрак"
+        self.icon = "G"
+
+    def check_move(self, old_pos: Position, new_pos: Position, table) -> str:
+        dist_x, dist_y = abs(old_pos.x - new_pos.x), abs(old_pos.y - new_pos.y)
+        if (dist_x in [2, 3] and dist_y == 0) or (dist_y in [2, 3] and dist_x == 0):
+            if table[new_pos.x][new_pos.y].has_figure():
+                return 'eat' if table[new_pos.x][new_pos.y].get_figure().color != self.color else 'false'
+            return 'move'
+        return 'false'
+
+class Checker(Figure): 
+    def __init__(self, color):
+        super().__init__(color)
+        self.name = "Шашка"
+        self.icon = "●" 
+
+    def check_move(self, old_pos, new_pos, table):
+        dx = new_pos.x - old_pos.x
+        dy = abs(new_pos.y - old_pos.y)
+        
+        direction = 1 if self.color == Colors.BLACK else -1
+        
+        if dx == direction and dy == 1:
+            if not table[new_pos.x][new_pos.y].has_figure():
+                return 'move'
+            
+        if abs(dx) == 2 and dy == 2:
+            mid_x, mid_y = (old_pos.x + new_pos.x) // 2, (old_pos.y + new_pos.y) // 2
+            mid_cell = table[mid_x][mid_y]
+            
+            if mid_cell.has_figure() and mid_cell.get_figure().color != self.color:
+                if not table[new_pos.x][new_pos.y].has_figure():
+                    return 'eat'
+        return 'false'
+
+
+class CrownedChecker(Figure):  
+    def __init__(self, color: Colors = Colors.BLACK):
+        super().__init__(color)
+        self.name = "Дамка"
+        self.icon = "Q"  
+
+    def check_move(self, old_pos: Position, new_pos: Position, table) -> str:
+        dx = new_pos.x - old_pos.x
+        dy = new_pos.y - old_pos.y
+        
+        if abs(dx) != abs(dy) or dx == 0:
+            return 'false'
+
+        step_x = 1 if dx > 0 else -1
+        step_y = 1 if dy > 0 else -1
+
+        curr_x, curr_y = old_pos.x + step_x, old_pos.y + step_y
+        enemy_count = 0
+
+        while (curr_x, curr_y) != (new_pos.x, new_pos.y):
+            if table[curr_x][curr_y].has_figure():
+                fig = table[curr_x][curr_y].get_figure()
+                if fig.color == self.color:
+                    return 'false'  
+                else:
+                    enemy_count += 1
+                    if enemy_count > 1:
+                        return 'false'  
+            curr_x += step_x
+            curr_y += step_y
+
+        
+        if table[new_pos.x][new_pos.y].has_figure():
+            return 'false'
+
+        if enemy_count == 1:
+            return 'eat'
+        elif enemy_count == 0:
+            return 'move'
+        return 'false'
+
+gamemanager.py
+----------------
+from typing import List
+from gpColor import colorize
+from src.figure import Pawn
+from src.helper import Colors, Position
+from src.table import Table, TableTypes
+from src.player import Player
+
+class Gamemanager:
+    def __init__(self):
+        self.current_table = None
+        self.players: List[Player] = []
+        self.current_player = None
+        self.is_working = True
+
+    def temp_start(self, table_type: TableTypes = TableTypes.BASIC):
+        try:
+            self.current_table = Table(type=table_type)
+            self.current_table.generate_table()
+            self.players = [Player(1, Colors.WHITE), Player(2, Colors.BLACK)]
+            self.current_player = self.players[0]
+            self.life_cycle()
+        except KeyboardInterrupt:
+            self._quit()
+
+
+    def move(self) -> bool:
+        try:
+            prompt = f"Ход ({self.current_player.return_name()}): "
+            inp = input(prompt).lower().split()
+            
+            if len(inp) < 2: 
+                return False
+            
+            p1, p2 = Position(inp[0]), Position(inp[1])
+            cell = self.current_table.table[p1.x][p1.y]
+            fig = cell.get_figure()
+            
+            if not fig or fig.color != self.current_player.color: 
+                print("Это не твоя фигура или клетка пуста!")
+                return False
+            
+            
+            res = self.current_table.move_figure(p1, p2)
+
+            return res 
+            
+        except Exception as e:
+            print(f"Критическая ошибка в move: {e}")
+            return False
+
+
+    def life_cycle(self):
+        while self.is_working:
+            
+            self.current_table.print_table()
+            
+            is_moved = False
+            while not is_moved:
+                
+                if self.move(): 
+                    is_moved = True
+                else:
+                    print("ОШИБКА ХОДА! Попробуй еще раз.")
+
+            self._next_player()
+            print(f"--- Очередь перешла к: {self.current_player.return_name()} ---")
+
+
+    def round_check(self):
+        
+        for i, row_idx in enumerate([0, 7]):
+            color = Colors.WHITE if i == 0 else Colors.BLACK
+            for cell in self.current_table.table[row_idx]:
+                fig = cell.get_figure()
+                if isinstance(fig, Pawn) and fig.color == color:
+                    cell.change_figure(fig.last_cell_transform())
+        
+        checks = self.current_table.try_check()
+        if checks:
+            for king, pos, attackers in checks:
+                enemy_color = king.color
+                print(colorize(f"\n ШАХ {Colors.color_to_name(enemy_color)}! ", font=Colors.ORANGE))
+                
+                
+                if self.current_table.is_checkmate(enemy_color):
+                    print(colorize(f"\n МАТ! Игрок {self.current_player.return_name()} побеждает! ", font=Colors.RED))
+                    self.is_working = False 
+
+    def _next_player(self):
+        self.current_player = self.players[1] if self.current_player == self.players[0] else self.players[0]
+
+    def _quit(self):
+        self.is_working = False
+        print(colorize("\nВыход!", font=Colors.GREEN))
+
+helper.py
+-------------
+from src.errors import *
+
+class Position:
+    def __init__(self, *position):
+        if len(position) == 1:
+            x, y = self._convert_xy(position[0])
+
+            if self._validate_pos((x, y)) == True:
+                self.x, self.y = x, y
+                self.position = position[0]
+            else:
+                raise WrongPositionError()
+        elif len(position) == 2:
+            x, y = [int(x) for x in position]
+
+            if self._validate_pos((x, y)) == True:
+                self.x, self.y = x, y
+                self.position = self._convert_a(x, y)
+            else:
+                raise WrongPositionError()
+        else:
+            raise WrongPositionError()
+
+    def __str__(self):
+        return f"{self.position} ({self.x}, {self.y})"
+
+
+    def _validate_pos(self, pos: tuple):
+        if len(pos) == 2 and all(isinstance(x, int) and x > -1 for x in pos):
+            return True
+        return False
+    
+    def _convert_xy(self, position: str):
+        letter = position[0]
+        number = position[1]
+
+        y = ord(letter) - ord('a')
+    
+        x = 8 - int(number)
+        
+        return (x, y)
+    
+    def _convert_a(self, x: int, y: int) -> str:
+        if not (0 <= x < 8 and 0 <= y < 8):
+            raise WrongPositionError()
+        
+        letter = chr(ord('a') + y)
+        
+        number = str(8 - x)
+        
+        return f"{letter}{number}"
+        
+    
+    def __eq__(self, other):
+        if not isinstance(other, Position):
+            return False
+        return self.position == other.position
+    
+    def __ne__(self, other):
+        if not isinstance(other, Position):
+            return True
+        return self.position != other.position
+
+
+
+
+
+    
+class Colors():
+    BLACK = "#000000"
+    WHITE = "#FFFFFF"
+
+    DARK = "#7b6c55"
+    MIDDLE = "#a28355"
+    LIGHT = "#d8b984"
+
+    GREEN = "#16D408"
+    RED = "#FF4343"
+    ORANGE = "#FF7B00"
+
+    translator = {
+            BLACK : "черный",
+            WHITE : "белый",
+
+            DARK : "темный",
+            MIDDLE : "серо-буро-малиновый",
+            LIGHT : "светлый",
+
+            GREEN : "зеленый",
+            RED : "красный",
+            ORANGE : "оранжевый",
+        }
+
+    @classmethod
+    def color_to_name(cls, color):
+        try:
+            text = cls.translator[color]
+            return text
+        
+        except Exception as e:
+            raise ValueError("Такого цвета нет!")
+
+
+history.py
+------------------
+from gpColor import colorize
+
+from src.figure import Figure
+from src.helper import Colors, Position
+from src.player import Player
+
+
+class History:
+    moves = []          # список всех ходов
+    killed = []         # список всех убитых фигур (если нужно глобально)
+
+    @classmethod
+    def add_move(cls, from_pos: Position, to_pos: Position, figure: Figure, player: Player, move_type: str):
+        move = MoveHistory(from_pos, to_pos, figure, player, move_type)
+        cls.moves.append(move)
+
+    @classmethod
+    def add_killed(cls, figure):
+        if isinstance(figure, Figure):
+            cls.killed.append(figure)
+
+    @classmethod
+    def get_killed(cls, colors_list):
+        if not isinstance(colors_list, list): return False
+
+        return [x for x in cls.killed if x.color in colors_list]
+    
+    @classmethod
+    def get_formatted_history(cls):
+        return [f"{i+1}) {cls.moves[i]}\n" for i in range(len(cls.moves))]
+
+    @classmethod
+    def get_history(cls):
+        return cls.moves
+    
+    @classmethod
+    def last_move(cls):
+        return cls.moves[-1].return_info() if cls.moves else None
+
+    @classmethod
+    def clear(cls):
+        cls.moves.clear()
+
+
+class MoveHistory:
+    def __init__(self, from_pos: Position, to_pos: Position, figure: Figure, player: Player, move_type: str):
+        self.from_pos = from_pos
+        self.to_pos = to_pos
+        self.figure = figure
+        self.player = player
+        self.move_type = move_type # move, eat, shah, mat
+
+    def __str__(self):
+        return f"[{self.player.name} ({self.player.id})] {colorize(self.figure.name, font = self.figure.color)} ({self.from_pos.position} -> {self.to_pos.position}) | {self.move_type}"
+
+
+player.py
+------------
+
+from typing import List
+
+from gpColor import colorize
+
+from src.figure import Figure
+from src.helper import Colors
+
+class Player:
+    def __init__(self, id: int, color: Colors = Colors.WHITE):
+        self.id = id
+        self.name: str = f"Игрок {id}"
+        self.color: Colors = color
+
+        self.killed_figures: List[Figure] = []
+
+    def set_name(self, name):
+        if isinstance(str, name):
+            self.name = name
+
+    def set_color(self, color: Colors):
+        self.color = color
+
+    def return_name(self):
+        return f"{self.name} ({colorize("•", font = self.color)})"
+
+    def return_info(self):
+        return colorize(f"Игрок {self.name} ({self.id})", font = self.color)
+    
+    def reset(self):
+        self.killed_figures = []
+
+table.py
+----------------
+from src.cells import Cell
+from src.helper import Colors, Position
+from gpColor import colorize
+from src.figure import *
+
+class TableTypes:
+    BASIC = "basic"
+    MODERN = "modern"
+    CHECKERS = "checkers"
+
+class Table:
+    def __init__(self, type=TableTypes.BASIC, size=(8,8)):
+        self.type, self.size, self.table = type, size, []
+
+    def generate_table(self):
+        self.table = [[Cell(Colors.DARK if (x+y)%2 else Colors.LIGHT) for y in range(8)] for x in range(8)]
+        if self.type in [TableTypes.BASIC, TableTypes.MODERN]:
+            p = [Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook]
+            if self.type == TableTypes.MODERN:
+                p = [Tank, Jester, Ghost, Queen, King, Ghost, Jester, Tank]
+            for i in range(8):
+                self.table[0][i].set_figure(p[i](Colors.BLACK))
+                self.table[1][i].set_figure(Pawn(Colors.BLACK))
+                self.table[6][i].set_figure(Pawn(Colors.WHITE))
+                self.table[7][i].set_figure(p[i](Colors.WHITE))
+        elif self.type == TableTypes.CHECKERS:
+            for x in range(8):
+                for y in range(8):
+                    if (x + y) % 2 != 0:
+                        if x < 3: self.table[x][y].set_figure(Checker(Colors.BLACK))
+                        elif x > 4: self.table[x][y].set_figure(Checker(Colors.WHITE))
+
+    def print_table(self):
+        print("   a  b  c  d  e  f  g  h")
+        for i, line in enumerate(self.table):
+            print(f"{8-i} ", end="")
+            for cell in line: print(cell, end="")
+            print(f" {8-i}")
+        print("   a  b  c  d  e  f  g  h")
+
+    def _execute_jump(self, p1: Position, p2: Position):
+        """Универсальное перемещение с удалением фигуры на пути"""
+        dx = 1 if p2.x > p1.x else -1
+        dy = 1 if p2.y > p1.y else -1
+        
+        curr_x, curr_y = p1.x + dx, p1.y + dy
+        while (curr_x, curr_y) != (p2.x, p2.y):
+            if self.table[curr_x][curr_y].has_figure():
+                self.table[curr_x][curr_y].remove_figure()
+                break 
+            curr_x += dx
+            curr_y += dy
+
+        fig = self.table[p1.x][p1.y].extract_figure()
+        self.table[p2.x][p2.y].set_figure(fig)
+
+    def get_available_jumps(self, pos: Position) -> list:
+        """Поиск прыжков для шашек: для дамки — через всё поле, для простой шашки — на 2 клетки"""
+        if self.type != TableTypes.CHECKERS:
+            return []  
+        
+        jumps = []
+        figure = self.table[pos.x][pos.y].get_figure()
+        if not figure: 
+            return jumps
+
+        directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
+        
+        if isinstance(figure, CrownedChecker):
+            
+            for dx, dy in directions:
+                found_enemy = False
+                curr_x, curr_y = pos.x + dx, pos.y + dy
+                
+                while 0 <= curr_x < 8 and 0 <= curr_y < 8:
+                    if not found_enemy:
+                        if self.table[curr_x][curr_y].has_figure():
+                            if self.table[curr_x][curr_y].get_figure().color == figure.color:
+                                break  
+                            else:
+                                found_enemy = True  
+                    else:
+                        
+                        if not self.table[curr_x][curr_y].has_figure():
+                            jumps.append(Position(curr_x, curr_y))
+                        else:
+                            break  
+                    curr_x += dx
+                    curr_y += dy
+        else:
+            
+            for dx, dy in directions:
+                mid_x, mid_y = pos.x + dx, pos.y + dy
+                end_x, end_y = pos.x + 2 * dx, pos.y + 2 * dy
+                if 0 <= end_x < 8 and 0 <= end_y < 8:
+                    mid_cell = self.table[mid_x][mid_y]
+                    end_cell = self.table[end_x][end_y]
+                    if mid_cell.has_figure() and mid_cell.get_figure().color != figure.color and not end_cell.has_figure():
+                        jumps.append(Position(end_x, end_y))
+        return jumps
+
+    def continue_jump(self, pos: Position):
+        """Рекурсивная серия прыжков (комбо) для шашек"""
+        if self.type != TableTypes.CHECKERS:
+            return
+            
+        jumps = self.get_available_jumps(pos)
+        if not jumps: return
+            
+        if len(jumps) == 1:
+            next_pos = jumps[0]
+            self._execute_jump(pos, next_pos)
+            print(colorize(f" АВТО-ПРЫЖОК: {pos.position} -> {next_pos.position} ", font=Colors.ORANGE))
+            fig = self.table[next_pos.x][next_pos.y].get_figure()
+            self.check_promotion(fig, next_pos)
+            self.continue_jump(next_pos) 
+        else:
+            self.print_table()
+            jump_names = [j.position for j in jumps]
+            print(colorize(f"\n Развилка! Можно прыгнуть на: {', '.join(jump_names)} ", font=Colors.GREEN))
+            while True:
+                choice = input("Ваш выбор: ").lower().strip()
+                selected = next((j for j in jumps if j.position == choice), None)
+                if selected:
+                    self._execute_jump(pos, selected)
+                    fig = self.table[selected.x][selected.y].get_figure()
+                    self.check_promotion(fig, selected)
+                    self.continue_jump(selected) 
+                    break
+                print(colorize(" Неверный ход! ", font=Colors.RED))
+
+    def move_figure(self, position1: Position, position2: Position) -> bool:
+        cell1 = self.table[position1.x][position1.y]
+        figure = cell1.get_figure()
+        
+        if not figure: 
+            return False
+
+        check = figure.check_move(position1, position2, self.table)
+
+        if check == 'move':
+            fig = cell1.extract_figure()
+            self.table[position2.x][position2.y].set_figure(fig)
+            self.check_promotion(fig, position2)
+            return True 
+                
+        elif check in ['eat', 'eat_checker']: 
+            self._execute_jump(position1, position2)
+            current_fig = self.table[position2.x][position2.y].get_figure()
+            self.check_promotion(current_fig, position2)
+            self.continue_jump(position2)
+            return True 
+
+        return False
+
+    def check_promotion(self, figure, pos: Position):
+        """Превращает шашку в дамку (CrownedChecker) для шашек, или пешку в ферзя для шахмат"""
+        if not figure: 
+            return
+        
+        if self.type == TableTypes.CHECKERS:
+            
+            if isinstance(figure, CrownedChecker): 
+                return
+            
+            is_white_promo = (figure.color == Colors.WHITE and pos.x == 0)
+            is_black_promo = (figure.color == Colors.BLACK and pos.x == 7)
+
+            if is_white_promo or is_black_promo:
+                self.table[pos.x][pos.y].change_figure(CrownedChecker)
+                color_name = "БЕЛАЯ" if figure.color == Colors.WHITE else "ЧЕРНАЯ"
+                print(colorize(f" {color_name} ШАШКА СТАЛА ДАМКОЙ! ", font=Colors.GREEN))
+        else:
+            
+            if not isinstance(figure, Pawn) or isinstance(figure, Queen):
+                return
+            is_white_promo = (figure.color == Colors.WHITE and pos.x == 0)
+            is_black_promo = (figure.color == Colors.BLACK and pos.x == 7)
+            if is_white_promo or is_black_promo:
+                self.table[pos.x][pos.y].change_figure(Queen)
+                color_name = "БЕЛАЯ" if figure.color == Colors.WHITE else "ЧЕРНАЯ"
+                print(colorize(f" {color_name} ПЕШКА СТАЛА ФЕРЗЁМ! ", font=Colors.GREEN))
+
+    def try_check(self):
+        kings = []
+        for x in range(8):
+            for y in range(8):
+                f = self.table[x][y].get_figure()
+                if isinstance(f, King): kings.append((f, Position(x, y)))
+        
+        under_check = []
+        for king, pos in kings:
+            attackers = []
+            for rx in range(8):
+                for ry in range(8):
+                    f = self.table[rx][ry].get_figure()
+                    if f and f.color != king.color:
+                        if f.check_move(Position(rx, ry), pos, self.table) in ['move', 'eat']:
+                            attackers.append(Position(rx, ry))
+            if attackers: under_check.append((king, pos, attackers))
+        return under_check
+
+    def is_checkmate(self, color: Colors) -> bool:
+        if self.type == TableTypes.CHECKERS:
+            return False
+        checks = self.try_check()
+        if not any(king.color == color for king, pos, attackers in checks): return False
+
+        for fx in range(8):
+            for fy in range(8):
+                c_from = self.table[fx][fy]
+                if c_from.has_figure() and c_from.get_figure().color == color:
+                    p1 = Position(fx, fy)
+                    for tx in range(8):
+                        for ty in range(8):
+                            p2 = Position(tx, ty)
+                            if c_from.get_figure().check_move(p1, p2, self.table) in ['move', 'eat']:
+                                c_to = self.table[tx][ty]
+                                old_fig, mover = c_to.get_figure(), c_from.get_figure()
+                                c_to.figure, c_from.figure = mover, None
+                                still_check = any(k.color == color for k, p, a in self.try_check())
+                                c_from.figure, c_to.figure = mover, old_fig
+                                if not still_check: return False
+        return True
+
+    def get_longest_capture_path(self, pos: Position, current_path: list = None) -> list:
+        if self.type != TableTypes.CHECKERS:
+            return []
+        if current_path is None: 
+            current_path = []
+        
+        longest_path = []
+        figure = self.table[pos.x][pos.y].get_figure()
+        if not figure: 
+            return longest_path
+
+        directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
+        
+        for dx, dy in directions:
+            mid_x, mid_y = pos.x + dx, pos.y + dy
+            end_x, end_y = pos.x + 2 * dx, pos.y + 2 * dy
+            
+            if 0 <= end_x < 8 and 0 <= end_y < 8:
+                mid_cell = self.table[mid_x][mid_y]
+                end_cell = self.table[end_x][end_y]
+                
+                if mid_cell.has_figure() and mid_cell.get_figure().color != figure.color and not end_cell.has_figure():
+                    eaten_fig = mid_cell.extract_figure()
+                    self.table[end_x][end_y].set_figure(figure)
+                    self.table[pos.x][pos.y].remove_figure()
+                    
+                    new_path = current_path + [Position(end_x, end_y)]
+                    path_from_here = self.get_longest_capture_path(Position(end_x, end_y), new_path)
+                    
+                    if len(path_from_here) > len(longest_path):
+                        longest_path = path_from_here
+                        
+                    self.table[pos.x][pos.y].set_figure(figure)
+                    self.table[end_x][end_y].remove_figure()
+                    mid_cell.set_figure(eaten_fig)
+                    
+        if not longest_path:
+            longest_path = current_path
+            
+        return longest_path
+
+main.py
+----------
+from src.gamemanager import Gamemanager
+from src.table import TableTypes
+
+game = Gamemanager()
+
+game.temp_start(table_type = TableTypes.BASIC)
