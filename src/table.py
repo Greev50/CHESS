@@ -38,11 +38,57 @@ class Table:
             print(f" {8-i}")
         print("   a  b  c  d  e  f  g  h")
 
+    def show_help(self, pos: Position):
+        cell = self.table[pos.x][pos.y]
+        figure = cell.get_figure()
+        if not figure: return False
+
+        moves = {}
+        for x in range(8):
+            for y in range(8):
+                target_pos = Position(x, y)
+                res = figure.check_move(pos, target_pos, self.table)
+                if res in ['move', 'eat']:
+                    moves[(x, y)] = res
+
+        if self.type == TableTypes.CHECKERS:
+            jumps = self.get_available_jumps(pos)
+            if jumps:
+                moves = {(j.x, j.y): 'eat' for j in jumps}
+            else:
+                for (x, y), res in list(moves.items()):
+                    if res == 'eat':
+                        del moves[(x, y)]
+
+        if not moves:
+            print(colorize("\n Нет доступных ходов для этой фигуры! \n", font=Colors.ORANGE))
+            return True
+
+        original_colors = {}
+        for (x, y), move_type in moves.items():
+            target_cell = self.table[x][y]
+            original_colors[(x, y)] = target_cell.color
+            if move_type == 'move':
+                target_cell.color = Colors.GREEN
+            elif move_type == 'eat':
+                target_cell.color = Colors.RED
+
+        orig_fig_color = cell.color
+        cell.color = Colors.ORANGE
+
+        print(colorize(f"\n Доступные ходы для {figure.name} ({pos.position}): \n", font=Colors.GREEN))
+        self.print_table()
+        print("\n")
+
+        for (x, y), orig_color in original_colors.items():
+            self.table[x][y].color = orig_color
+        cell.color = orig_fig_color
+
+        return True
+
     def _execute_jump(self, p1: Position, p2: Position):
-        """Универсальное перемещение с удалением фигуры на пути"""
         dx = 1 if p2.x > p1.x else -1
         dy = 1 if p2.y > p1.y else -1
-        
         curr_x, curr_y = p1.x + dx, p1.y + dy
         while (curr_x, curr_y) != (p2.x, p2.y):
             if self.table[curr_x][curr_y].has_figure():
@@ -50,28 +96,21 @@ class Table:
                 break 
             curr_x += dx
             curr_y += dy
-
         fig = self.table[p1.x][p1.y].extract_figure()
         self.table[p2.x][p2.y].set_figure(fig)
 
     def get_available_jumps(self, pos: Position) -> list:
-        """Поиск прыжков для шашек: для дамки — через всё поле, для простой шашки — на 2 клетки"""
         if self.type != TableTypes.CHECKERS:
             return []  
-        
         jumps = []
         figure = self.table[pos.x][pos.y].get_figure()
         if not figure: 
             return jumps
-
         directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
-        
         if isinstance(figure, CrownedChecker):
-            
             for dx, dy in directions:
                 found_enemy = False
                 curr_x, curr_y = pos.x + dx, pos.y + dy
-                
                 while 0 <= curr_x < 8 and 0 <= curr_y < 8:
                     if not found_enemy:
                         if self.table[curr_x][curr_y].has_figure():
@@ -80,7 +119,6 @@ class Table:
                             else:
                                 found_enemy = True  
                     else:
-                        
                         if not self.table[curr_x][curr_y].has_figure():
                             jumps.append(Position(curr_x, curr_y))
                         else:
@@ -88,7 +126,6 @@ class Table:
                     curr_x += dx
                     curr_y += dy
         else:
-            
             for dx, dy in directions:
                 mid_x, mid_y = pos.x + dx, pos.y + dy
                 end_x, end_y = pos.x + 2 * dx, pos.y + 2 * dy
@@ -100,13 +137,10 @@ class Table:
         return jumps
 
     def continue_jump(self, pos: Position):
-        """Рекурсивная серия прыжков (комбо) для шашек"""
         if self.type != TableTypes.CHECKERS:
             return
-            
         jumps = self.get_available_jumps(pos)
         if not jumps: return
-            
         if len(jumps) == 1:
             next_pos = jumps[0]
             self._execute_jump(pos, next_pos)
@@ -117,7 +151,7 @@ class Table:
         else:
             self.print_table()
             jump_names = [j.position for j in jumps]
-            print(colorize(f"\n Развилка! Можно прыгнуть на: {', '.join(jump_names)} ", font=Colors.GREEN))
+            print(colorize(f"\n Развилка!\nМожно прыгнуть на: {', '.join(jump_names)} ", font=Colors.GREEN))
             while True:
                 choice = input("Ваш выбор: ").lower().strip()
                 selected = next((j for j in jumps if j.position == choice), None)
@@ -132,48 +166,33 @@ class Table:
     def move_figure(self, position1: Position, position2: Position) -> bool:
         cell1 = self.table[position1.x][position1.y]
         figure = cell1.get_figure()
-        
-        if not figure: 
-            return False
-
+        if not figure: return False
         check = figure.check_move(position1, position2, self.table)
-
         if check == 'move':
             fig = cell1.extract_figure()
             self.table[position2.x][position2.y].set_figure(fig)
             self.check_promotion(fig, position2)
             return True 
-                
         elif check in ['eat', 'eat_checker']: 
             self._execute_jump(position1, position2)
             current_fig = self.table[position2.x][position2.y].get_figure()
             self.check_promotion(current_fig, position2)
             self.continue_jump(position2)
             return True 
-
         return False
 
     def check_promotion(self, figure, pos: Position):
-        """Превращает шашку в дамку (CrownedChecker) для шашек, или пешку в ферзя для шахмат"""
-        if not figure: 
-            return
-        
+        if not figure: return
         if self.type == TableTypes.CHECKERS:
-            
-            if isinstance(figure, CrownedChecker): 
-                return
-            
+            if isinstance(figure, CrownedChecker): return
             is_white_promo = (figure.color == Colors.WHITE and pos.x == 0)
             is_black_promo = (figure.color == Colors.BLACK and pos.x == 7)
-
             if is_white_promo or is_black_promo:
                 self.table[pos.x][pos.y].change_figure(CrownedChecker)
                 color_name = "БЕЛАЯ" if figure.color == Colors.WHITE else "ЧЕРНАЯ"
-                print(colorize(f" {color_name} ШАШКА СТАЛА ДАМКОЙ! ", font=Colors.GREEN))
+                print(colorize(f" {color_name} ШАШКА СТАЛА ДАМКОЙ!\n", font=Colors.GREEN))
         else:
-            
-            if not isinstance(figure, Pawn) or isinstance(figure, Queen):
-                return
+            if not isinstance(figure, Pawn) or isinstance(figure, Queen): return
             is_white_promo = (figure.color == Colors.WHITE and pos.x == 0)
             is_black_promo = (figure.color == Colors.BLACK and pos.x == 7)
             if is_white_promo or is_black_promo:
@@ -187,7 +206,6 @@ class Table:
             for y in range(8):
                 f = self.table[x][y].get_figure()
                 if isinstance(f, King): kings.append((f, Position(x, y)))
-        
         under_check = []
         for king, pos in kings:
             attackers = []
@@ -201,11 +219,9 @@ class Table:
         return under_check
 
     def is_checkmate(self, color: Colors) -> bool:
-        if self.type == TableTypes.CHECKERS:
-            return False
+        if self.type == TableTypes.CHECKERS: return False
         checks = self.try_check()
         if not any(king.color == color for king, pos, attackers in checks): return False
-
         for fx in range(8):
             for fy in range(8):
                 c_from = self.table[fx][fy]
@@ -224,42 +240,28 @@ class Table:
         return True
 
     def get_longest_capture_path(self, pos: Position, current_path: list = None) -> list:
-        if self.type != TableTypes.CHECKERS:
-            return []
-        if current_path is None: 
-            current_path = []
-        
+        if self.type != TableTypes.CHECKERS: return []
+        if current_path is None: current_path = []
         longest_path = []
         figure = self.table[pos.x][pos.y].get_figure()
-        if not figure: 
-            return longest_path
-
+        if not figure: return longest_path
         directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
-        
         for dx, dy in directions:
             mid_x, mid_y = pos.x + dx, pos.y + dy
             end_x, end_y = pos.x + 2 * dx, pos.y + 2 * dy
-            
             if 0 <= end_x < 8 and 0 <= end_y < 8:
                 mid_cell = self.table[mid_x][mid_y]
                 end_cell = self.table[end_x][end_y]
-                
                 if mid_cell.has_figure() and mid_cell.get_figure().color != figure.color and not end_cell.has_figure():
                     eaten_fig = mid_cell.extract_figure()
                     self.table[end_x][end_y].set_figure(figure)
                     self.table[pos.x][pos.y].remove_figure()
-                    
                     new_path = current_path + [Position(end_x, end_y)]
                     path_from_here = self.get_longest_capture_path(Position(end_x, end_y), new_path)
-                    
                     if len(path_from_here) > len(longest_path):
                         longest_path = path_from_here
-                        
                     self.table[pos.x][pos.y].set_figure(figure)
                     self.table[end_x][end_y].remove_figure()
                     mid_cell.set_figure(eaten_fig)
-                    
-        if not longest_path:
-            longest_path = current_path
-            
+        if not longest_path: longest_path = current_path
         return longest_path

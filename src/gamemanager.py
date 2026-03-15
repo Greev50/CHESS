@@ -44,6 +44,18 @@ class Gamemanager:
                     print("---------------------\n")
                 return 'info'
 
+            if len(inp) == 2 and inp[0] == "help":
+                try:
+                    p = Position(inp[1])
+                    fig = self.current_table.table[p.x][p.y].get_figure()
+                    if not fig or fig.color != self.current_player.color:
+                        print("Это не твоя фигура или клетка пуста!")
+                        return 'error'
+                    self.current_table.show_help(p)
+                    return 'info'
+                except Exception:
+                    return 'error'
+
             if len(inp) == 2 and inp[0] == "back":
                 try:
                     steps = int(inp[1])
