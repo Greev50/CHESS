@@ -1,5 +1,3 @@
-from src.errors import *
-
 class Position:
     def __init__(self, *position):
         if len(position) == 1:
@@ -9,7 +7,7 @@ class Position:
                 self.x, self.y = x, y
                 self.position = position[0]
             else:
-                raise WrongPositionError()
+                raise ValueError()
         elif len(position) == 2:
             x, y = [int(x) for x in position]
 
@@ -17,9 +15,9 @@ class Position:
                 self.x, self.y = x, y
                 self.position = self._convert_a(x, y)
             else:
-                raise WrongPositionError()
+                raise ValueError()
         else:
-            raise WrongPositionError()
+            raise ValueError()
 
     def __str__(self):
         return f"{self.position} ({self.x}, {self.y})"
@@ -42,7 +40,7 @@ class Position:
     
     def _convert_a(self, x: int, y: int) -> str:
         if not (0 <= x < 8 and 0 <= y < 8):
-            raise WrongPositionError()
+            raise ValueError()
         
         letter = chr(ord('a') + y)
         
