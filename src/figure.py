@@ -11,7 +11,7 @@ class Figure:
         return 'false'
     
     def __str__(self):
-        return colorize(f"\033[1m {self.icon} \033[0m", font = self.color)
+        return colorize(f"\033[1m {self.icon} \033[0m", font=self.color)
     
 class NoneFigure(Figure):
     def __init__(self):
@@ -30,34 +30,26 @@ class Pawn(Figure):
         dx = new_pos.x - old_pos.x
         dy = new_pos.y - old_pos.y
         
-        
         if self.color == Colors.WHITE:
-            
             if dx != -1 and dx != -2:  
                 return 'false'
             direction = -1
         else:  
-            
             if dx != 1 and dx != 2:  
                 return 'false'
             direction = 1
         
-        
         is_first_move = (self.color == Colors.WHITE and old_pos.x == 6) or \
                         (self.color == Colors.BLACK and old_pos.x == 1)
-        
         
         if dx == direction and dy == 0:
             if not table[new_pos.x][new_pos.y].has_figure():
                 return 'move'
         
-        
         if dx == 2 * direction and dy == 0 and is_first_move:
-            
             mid_x = old_pos.x + direction
             if not table[mid_x][old_pos.y].has_figure() and not table[new_pos.x][new_pos.y].has_figure():
                 return 'move'
-        
         
         if dx == direction and abs(dy) == 1:
             if table[new_pos.x][new_pos.y].has_figure() and \
@@ -82,7 +74,7 @@ class King(Figure):
         return 'false'
 
 
-class Queen(Figure): 
+class Queen(Figure):  
     def __init__(self, color: Colors = Colors.BLACK):
         super().__init__(color)
         self.name = "Ферзь"
@@ -91,7 +83,6 @@ class Queen(Figure):
     def check_move(self, old_pos: Position, new_pos: Position, table) -> str:
         dx = new_pos.x - old_pos.x
         dy = new_pos.y - old_pos.y
-        
         
         if not (dx == 0 or dy == 0 or abs(dx) == abs(dy)):
             return 'false'
@@ -228,5 +219,46 @@ class Checker(Figure):
             if mid_cell.has_figure() and mid_cell.get_figure().color != self.color:
                 if not table[new_pos.x][new_pos.y].has_figure():
                     return 'eat'
+        return 'false'
 
+
+class CrownedChecker(Figure):  
+    def __init__(self, color: Colors = Colors.BLACK):
+        super().__init__(color)
+        self.name = "Дамка"
+        self.icon = "Q"  
+
+    def check_move(self, old_pos: Position, new_pos: Position, table) -> str:
+        dx = new_pos.x - old_pos.x
+        dy = new_pos.y - old_pos.y
+        
+        if abs(dx) != abs(dy) or dx == 0:
+            return 'false'
+
+        step_x = 1 if dx > 0 else -1
+        step_y = 1 if dy > 0 else -1
+
+        curr_x, curr_y = old_pos.x + step_x, old_pos.y + step_y
+        enemy_count = 0
+
+        while (curr_x, curr_y) != (new_pos.x, new_pos.y):
+            if table[curr_x][curr_y].has_figure():
+                fig = table[curr_x][curr_y].get_figure()
+                if fig.color == self.color:
+                    return 'false'  
+                else:
+                    enemy_count += 1
+                    if enemy_count > 1:
+                        return 'false'  
+            curr_x += step_x
+            curr_y += step_y
+
+        
+        if table[new_pos.x][new_pos.y].has_figure():
+            return 'false'
+
+        if enemy_count == 1:
+            return 'eat'
+        elif enemy_count == 0:
+            return 'move'
         return 'false'
