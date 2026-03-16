@@ -77,6 +77,7 @@ class Colors():
     GREEN = "#16D408"
     RED = "#FF4343"
     ORANGE = "#FF7B00"
+    # BLUE = "#FF7810"
 
     translator = {
             BLACK : "черный",
