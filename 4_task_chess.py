@@ -2,14 +2,10 @@ import pygame
 import sys
 import math
 
-# Константы цветов для доски
 BOARD_DARK = (123, 108, 85)    # #7b6c55
 BOARD_MIDDLE = (162, 131, 85)  # #a28355
 BOARD_LIGHT = (216, 185, 132)   # #d8b984
 
-# ----------------------------------------------------------------------
-# Классы фигур
-# ----------------------------------------------------------------------
 class Piece:
     def __init__(self, color, x, y, z, symbol):
         self.color = color      
@@ -17,7 +13,7 @@ class Piece:
         self.y = y
         self.z = z
         self.symbol = symbol    
-        self.has_moved = False  # Флаг для первого хода пешки (и рокировки в будущем)
+        self.has_moved = False 
 
     def get_moves(self, board, occupied):
         return []
@@ -41,18 +37,15 @@ class Pawn(Piece):
         
         fdx, fdy, fdz = forward_map[self.color]
         
-        # 1. Ход на одну клетку вперёд
         nx, ny, nz = self.x + fdx, self.y + fdy, self.z + fdz
         if board.is_on_board(nx, ny, nz) and (nx, ny, nz) not in occupied:
             moves.append((nx, ny, nz))
             
-            # 2. Ход на две клетки вперёд (только если первый ход и первая клетка была пуста)
             if not self.has_moved:
                 nx2, ny2, nz2 = self.x + 2*fdx, self.y + 2*fdy, self.z + 2*fdz
                 if board.is_on_board(nx2, ny2, nz2) and (nx2, ny2, nz2) not in occupied:
                     moves.append((nx2, ny2, nz2))
 
-        # 3. Взятие фигуры противника
         for cdx, cdy, cdz in capture_map[self.color]:
             nx, ny, nz = self.x + cdx, self.y + cdy, self.z + cdz
             if board.is_on_board(nx, ny, nz):
@@ -250,7 +243,6 @@ def main():
                         del occupied[(selected_piece.x, selected_piece.y, selected_piece.z)]
                         selected_piece.x, selected_piece.y, selected_piece.z = coord
                         
-                        # КЛЮЧЕВОЙ МОМЕНТ: фиксируем, что фигура сделала ход
                         selected_piece.has_moved = True
                         
                         occupied[coord] = selected_piece
@@ -272,10 +264,9 @@ def main():
             pygame.draw.circle(board.screen, (0, 255, 255), (cx, cy), int(board.SIDE*0.6), 2)
         for p in pieces: board.draw_piece(board.screen, p)
         
-        # Инфо-панель
         font = pygame.font.Font(None, 40)
         txt_col = board.PLAYER_COLORS[current_player] if current_player != 'black' else (200, 200, 200)
-        label = font.render(f"TURN: {current_player.upper()}", True, txt_col)
+        label = font.render(f"Ход: {current_player.upper()}", True, txt_col)
         board.screen.blit(label, (20, 20))
         
         pygame.display.flip()

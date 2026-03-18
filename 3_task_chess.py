@@ -2,12 +2,9 @@ import pygame
 import sys
 import math
 
-# Импортируем твои цвета
+
 from src.helper import Colors
 
-# ----------------------------------------------------------------------
-# Класс доски
-# ----------------------------------------------------------------------
 class Board:
     def __init__(self):
         pygame.init()
@@ -15,7 +12,6 @@ class Board:
         self.SIDE = 30
         self.BACKGROUND = (30, 30, 30)
         
-        # --- ЦВЕТА ИЗ HELPER.PY ---
         self.COLORS = [Colors.DARK, Colors.MIDDLE, Colors.LIGHT]
         self.LINE_COLOR = Colors.BLACK
         self.PLAYER_COLORS = {
@@ -23,7 +19,6 @@ class Board:
             'black': Colors.BLACK,
             'orange': Colors.ORANGE
         }
-        # --------------------------
 
         self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
         pygame.display.set_caption("Гексагональные шахматы")
@@ -107,7 +102,6 @@ class Board:
         pygame.draw.circle(surface, color, (cx, cy), radius)
         pygame.draw.circle(surface, self.LINE_COLOR, (cx, cy), radius, 2)
         
-        # Контрастный текст: белый на черном/оранжевом, черный на белом
         font = pygame.font.Font(None, int(radius * 1.5))
         text_color = Colors.WHITE if piece.color in ['black', 'orange'] else Colors.BLACK
         
@@ -180,8 +174,6 @@ class Board:
                 if self.get_legal_moves(piece):
                     return True
         return False
-
-# --- КЛАССЫ ФИГУР (Остаются без изменений в логике) ---
 
 class Piece:
     def __init__(self, color, x, y, z, symbol):
@@ -350,12 +342,10 @@ def main():
 
         if board.game_over:
             msg = f"Мат! Победили {'Белые' if board.winner == 'white' else 'Чёрные'}" if board.winner else "Пат! Ничья"
-            # Передаем координаты для левого верхнего угла
             board.draw_text(msg, x_offset=10, y_offset=10)
         else:
             turn_text = f"Ход: {'Белые' if turn == 'white' else 'Чёрные'}"
             color = (255, 100, 100) if board.is_in_check(turn) else (255, 255, 255)
-            # Передаем координаты для левого верхнего угла
             board.draw_text(turn_text + (" (ШАХ!)" if board.is_in_check(turn) else ""), x_offset=10, y_offset=10, color=color)
 
         pygame.display.flip()
