@@ -3,4 +3,4 @@ from src.table import TableTypes
 
 game = Gamemanager()
 
-game.temp_start(table_type = TableTypes.BASIC)
+game.temp_start(table_type = TableTypes.CHECKERS)
